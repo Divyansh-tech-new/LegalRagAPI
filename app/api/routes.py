@@ -47,28 +47,21 @@ async def analyze_case(request: CaseAnalysisRequest):
         
         logger.info(f"Initial verdict: {initial_verdict}, confidence: {confidence}")
         
-        # Step 2: Retrieve supporting legal documents using RAG
-        if request.useQueryGeneration:
-            support_chunks, search_query = rag_service.retrieveDualSupportChunks(
-                request.caseText, gemini_service
-            )
-        else:
-            support_chunks, logs = rag_service.retrieveSupportChunksParallel(request.caseText)
-            search_query = request.caseText
-        
-        logger.info(f"Retrieved support chunks from {len(support_chunks)} sources")
-        
-        # Step 3: Evaluate with Gemini AI
+        # Step 2: Evaluate with Gemini AI using RAG
         evaluation_result = gemini_service.evaluateCaseWithGemini(
             inputText=request.caseText,
             modelVerdict=initial_verdict,
             confidence=confidence,
-            support=support_chunks,
-            searchQuery=search_query
+            retrieveFn=rag_service,
+            geminiQueryModel=gemini_service if request.useQueryGeneration else None
         )
+        
+        logger.info(f"Retrieved support chunks from RAG system")
+        search_query = evaluation_result.get("ragSearchQuery", request.caseText)
         
         logger.info(f"Gemini evaluation completed. Final verdict: {evaluation_result.get('finalVerdictByGemini')}")
         
+        support_chunks = evaluation_result.get("support", {})
         return CaseAnalysisResponse(
             initialVerdict=initial_verdict,
             initialConfidence=confidence,

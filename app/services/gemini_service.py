@@ -22,7 +22,7 @@ class GeminiService:
         except Exception as e:
             logger.error(f"Failed to initialize Gemini client: {str(e)}")
     
-    def generateSearchQueryFromCase(self, caseFacts: str, verbose: bool = False) -> str:
+    def generateSearchQueryFromCase(self, caseFacts: str, geminiModel=None, verbose: bool = False) -> str:
         if not self.client:
             raise ValueError("Gemini client not initialized")
         
@@ -58,7 +58,7 @@ Return only the search query, no explanation or prefix:
             if response.text:
                 query = response.text.replace("Search Query:", "").strip().strip('"').replace("\n", "")
             else:
-                query = caseFacts[:50]  # Fallback to first 50 chars
+                query = caseFacts[:50]  # Fallback
             
             if verbose:
                 logger.info(f"Generated RAG Query: {query}")
@@ -68,18 +68,18 @@ Return only the search query, no explanation or prefix:
             logger.error(f"Error generating search query: {str(e)}")
             raise ValueError(f"Search query generation failed: {str(e)}")
     
-    def _build_gemini_prompt(self, input_text: str, model_verdict: str, confidence: float, 
-                           support: Dict[str, List], query: Optional[str] = None) -> str:
-        verdict_outcome = "a loss for the person" if model_verdict.lower() == "guilty" else "in favor of the person"
+    def buildGeminiPrompt(self, inputText: str, modelVerdict: str, confidence: float, 
+                         support: Dict[str, List], query: Optional[str] = None) -> str:
+        verdictOutcome = "a loss for the person" if modelVerdict.lower() == "guilty" else "in favor of the person"
         
         prompt = f"""You are a judge evaluating a legal dispute under Indian law.
 
 ### Case Facts:
-{input_text}
+{inputText}
 
 ### Initial Model Verdict:
-{model_verdict.upper()} (Confidence: {confidence * 100:.2f}%)
-This verdict is interpreted as {verdict_outcome}.
+{modelVerdict.upper()} (Confidence: {confidence * 100:.2f}%)
+This verdict is interpreted as {verdictOutcome}.
 """
         
         if query:
@@ -122,8 +122,8 @@ This verdict is interpreted as {verdict_outcome}.
 2. If relevant past cases appear in the retrieved materials, summarize them and analyze whether they support or contradict the model's verdict.
 
 3. Using the above, assess the model's prediction:
-   - If confidence is below {settings.confidence_threshold * 100}%, you may revise or retain it.
-   - If confidence is {settings.confidence_threshold * 100}% or higher, retain unless clear legal grounds exist to challenge it.
+   - If confidence is below 60%, you may revise or retain it.
+   - If confidence is 60% or higher, retain unless clear legal grounds exist to challenge it.
 
 4. Provide a thorough and formal legal explanation that:
    - Justifies the final decision using legal logic
@@ -139,31 +139,33 @@ Respond in the tone of a formal Indian judge. Your explanation should reflect re
 """
         return prompt
     
-    def _extract_final_verdict(self, gemini_output: str) -> tuple[Optional[str], str]:
-        verdict_match = re.search(r"final verdict\s*[:\-]\s*(guilty|not guilty)", gemini_output, re.IGNORECASE)
-        changed_match = re.search(r"verdict changed\s*[:\-]\s*(yes|no)", gemini_output, re.IGNORECASE)
+    def extractFinalVerdict(self, geminiOutput: str) -> tuple[Optional[str], str]:
+        verdictMatch = re.search(r"final verdict\s*[:\-]\s*(guilty|not guilty)", geminiOutput, re.IGNORECASE)
+        changedMatch = re.search(r"verdict changed\s*[:\-]\s*(yes|no)", geminiOutput, re.IGNORECASE)
         
-        final_verdict = verdict_match.group(1).lower() if verdict_match else None
-        verdict_changed = "changed" if changed_match and changed_match.group(1).lower() == "yes" else "not changed"
+        finalVerdict = verdictMatch.group(1).lower() if verdictMatch else None
+        verdictChanged = "changed" if changedMatch and changedMatch.group(1).lower() == "yes" else "not changed"
         
-        return final_verdict, verdict_changed
+        return finalVerdict, verdictChanged
     
-    def evaluateCaseWithGemini(self, inputText: str, modelVerdict: str, confidence: float,
-                                support: Dict[str, List], searchQuery: str) -> Dict[str, Any]:
-        if not self.client:
-            raise ValueError("Gemini client not initialized")
-        
+    def evaluateCaseWithGemini(self, inputText: str, modelVerdict: str, confidence: float, 
+                              retrieveFn, geminiQueryModel=None):
         try:
-            prompt = self._build_gemini_prompt(inputText, modelVerdict, confidence, support, searchQuery)
-            
+            if geminiQueryModel:
+                support, searchQuery = retrieveFn.retrieveDualSupportChunks(inputText, self)
+            else:
+                support, _ = retrieveFn.retrieveSupportChunksParallel(inputText)
+                searchQuery = inputText
+
+            prompt = self.buildGeminiPrompt(inputText, modelVerdict, confidence, support, searchQuery)
             response = self.client.models.generate_content(
                 model=settings.gemini_model,
                 contents=prompt
             )
-            
             geminiOutput = response.text if response.text else "No response from Gemini"
-            finalVerdict, verdictChanged = self._extract_final_verdict(geminiOutput)
-            
+
+            finalVerdict, verdictChanged = self.extractFinalVerdict(geminiOutput)
+
             logs = {
                 "inputText": inputText,
                 "modelVerdict": modelVerdict,
@@ -175,16 +177,16 @@ Respond in the tone of a formal Indian judge. Your explanation should reflect re
                 "verdictChanged": verdictChanged,
                 "ragSearchQuery": searchQuery
             }
-            
+
             return logs
+
         except Exception as e:
-            logger.error(f"Error in Gemini evaluation: {str(e)}")
             return {
                 "error": str(e),
                 "inputText": inputText,
                 "modelVerdict": modelVerdict,
                 "confidence": confidence,
-                "ragSearchQuery": searchQuery,
+                "ragSearchQuery": None,
                 "support": None,
                 "promptToGemini": None,
                 "geminiOutput": None,
