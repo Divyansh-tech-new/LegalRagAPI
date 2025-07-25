@@ -42,7 +42,7 @@ async def analyze_case(request: CaseAnalysisRequest):
         logger.info(f"Analyzing case with text length: {len(request.caseText)}")
         
         # Step 1: Get initial verdict from LegalBERT
-        initial_verdict = legal_bert_service.predict_verdict(request.caseText)
+        initial_verdict = legal_bert_service.predictVerdict(request.caseText)
         confidence = legal_bert_service.getConfidence(request.caseText)
         
         logger.info(f"Initial verdict: {initial_verdict}, confidence: {confidence}")
