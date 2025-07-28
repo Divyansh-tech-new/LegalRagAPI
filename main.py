@@ -4,9 +4,36 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.core.config import settings
 import logging
+import os
+from huggingface_hub import snapshot_download
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Hugging Face model & dataset download
+logger.info("Downloading model and dataset from Hugging Face Hub...")
+
+HF_TOKEN = os.getenv("HF_TOKEN")  # Set in environment variables
+
+# Download FAISS index dataset
+FAISS_INDEX_PATH = snapshot_download(
+    repo_id="negi2725/dataRag",
+    repo_type="dataset",
+    token=HF_TOKEN
+)
+
+# Download LegalBERT model
+MODEL_PATH = snapshot_download(
+    repo_id="negi2725/legalBert",
+    token=HF_TOKEN
+)
+
+logger.info(f"FAISS index files downloaded to: {FAISS_INDEX_PATH}")
+logger.info(f"Model files downloaded to: {MODEL_PATH}")
+
+# Make these paths accessible globally in your app if needed
+os.environ["FAISS_INDEX_PATH"] = FAISS_INDEX_PATH
+os.environ["MODEL_PATH"] = MODEL_PATH
 
 app = FastAPI(
     title="Legal RAG Analysis API",
