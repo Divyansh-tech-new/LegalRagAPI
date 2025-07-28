@@ -1,9 +1,8 @@
 import re
-from typing import Dict, List, Any, Optional
-from google import genai
-from google.genai import types
-from app.core.config import settings
 import logging
+from typing import Dict, List, Any, Optional
+import google.generativeai as genai  # ✅ Correct import
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,8 @@ class GeminiService:
     def _initialize_client(self):
         try:
             if settings.gemini_api_key:
-                self.client = genai.Client(api_key=settings.gemini_api_key)
+                genai.configure(api_key=settings.gemini_api_key)  # ✅ Setup
+                self.client = genai.GenerativeModel(model_name=settings.gemini_model)  # ✅ Instantiate model
                 logger.info("Gemini client initialized successfully")
             else:
                 logger.warning("Gemini API key not provided")
@@ -48,17 +48,9 @@ Case Facts:
 
 Return only the search query, no explanation or prefix:
 """
-        
         try:
-            response = self.client.models.generate_content(
-                model=settings.gemini_model,
-                contents=prompt
-            )
-            
-            if response.text:
-                query = response.text.replace("Search Query:", "").strip().strip('"').replace("\n", "")
-            else:
-                query = caseFacts[:50]  # Fallback
+            response = self.client.generate_content(prompt)  # ✅ Updated API
+            query = response.text.strip().replace("Search Query:", "").strip('"').replace("\n", "") if response.text else caseFacts[:50]
             
             if verbose:
                 logger.info(f"Generated RAG Query: {query}")
@@ -158,10 +150,7 @@ Respond in the tone of a formal Indian judge. Your explanation should reflect re
                 searchQuery = inputText
 
             prompt = self.buildGeminiPrompt(inputText, modelVerdict, confidence, support, searchQuery)
-            response = self.client.models.generate_content(
-                model=settings.gemini_model,
-                contents=prompt
-            )
+            response = self.client.generate_content(prompt)  # ✅ Updated API
             geminiOutput = response.text if response.text else "No response from Gemini"
 
             finalVerdict, verdictChanged = self.extractFinalVerdict(geminiOutput)

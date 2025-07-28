@@ -13,16 +13,17 @@ logger = logging.getLogger(__name__)
 # Hugging Face model & dataset download
 logger.info("Downloading model and dataset from Hugging Face Hub...")
 
-HF_TOKEN = os.getenv("HF_TOKEN")  # Set in environment variables
+# HF_TOKEN = os.getenv("HF_TOKEN")  # Set in environment variables # make sure this imports the class that loads .env
 
-# Download FAISS index dataset
+HF_TOKEN = settings.hf_token
+print(f"Loaded HF_TOKEN: {HF_TOKEN!r}")
+
 FAISS_INDEX_PATH = snapshot_download(
     repo_id="negi2725/dataRag",
     repo_type="dataset",
     token=HF_TOKEN
 )
 
-# Download LegalBERT model
 MODEL_PATH = snapshot_download(
     repo_id="negi2725/legalBert",
     token=HF_TOKEN
