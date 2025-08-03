@@ -2,6 +2,36 @@
 
 A robust backend API leveraging Dual-Stage Retrieval-Augmented Generation (RAG) and advanced Gemini 2.5 prompting for Indian legal case analysis. Combines LegalBERT predictions with relevant law/precedent retrieval and judge-style generative reasoning.
 
+###Example
+
+## 🧾 Example Input & Output
+
+### ✅ Input (Case Summary)
+
+```text
+The Petitioner, a small business owner, entered into a contract with the Respondent—a freelance developer—for the creation of an e-commerce website. The contract, signed on March 5, 2023, stipulated delivery by April 15, 2023, against an advance payment of ₹1,00,000. The Respondent repeatedly delayed delivery, eventually submitting an incomplete, non-functional version on May 10, 2023.
+
+The Petitioner claims losses due to missed business opportunities and reputational harm, alleging criminal wrongdoing under IPC Sections 420 (cheating) and 406 (criminal breach of trust). Legal action is sought for refund, damages, and criminal conviction.
+
+IPC 420, IPC 406, cheating, criminal breach of trust, dishonest intention, fraud
+
+{
+  "verdict": "guilty",
+  "confidence": 0.6841,
+  "geminiVerdict": "not guilty",
+  "verdictChanged": "Yes",
+  "reasoning": "While the Respondent failed to deliver as per the contractual terms, the evidence does not support a finding of dishonest or fraudulent intent at the time the agreement was made. As highlighted in G. Sagar Suri v. State of U.P., mere failure to fulfill a contract or repay money is insufficient to establish criminal liability unless 'mens rea' (guilty mind) is proven at inception.
+
+The dispute, as presented, is civil in nature—pertaining to breach of contract and deficiency in service—best addressed through civil remedies such as refund or compensation under the Consumer Protection Act or Contract Act. No criminal offense under IPC 420 or 406 is made out."
+}
+
+Final Verdict: Not Guilty  
+Verdict Changed: Yes
+
+Reason: Absence of mens rea at the inception of the agreement and the availability of civil remedies make this a contractual dispute rather than a criminal offense under IPC 420/406.
+
+
+
 ---
 
 ## 🔗 **Pipeline Overview**
