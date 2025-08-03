@@ -13,8 +13,11 @@ The Petitioner, a small business owner, entered into a contract with the Respond
 
 The Petitioner claims losses due to missed business opportunities and reputational harm, alleging criminal wrongdoing under IPC Sections 420 (cheating) and 406 (criminal breach of trust). Legal action is sought for refund, damages, and criminal conviction.
 
-IPC 420, IPC 406, cheating, criminal breach of trust, dishonest intention, fraud
 
+Query by tags for 1st retrival : IPC 420, IPC 406, cheating, criminal breach of trust, dishonest intention, fraud
+
+### ✅ Output(Verdict)
+```
 {
   "verdict": "guilty",
   "confidence": 0.6841,
@@ -24,7 +27,7 @@ IPC 420, IPC 406, cheating, criminal breach of trust, dishonest intention, fraud
 
 The dispute, as presented, is civil in nature—pertaining to breach of contract and deficiency in service—best addressed through civil remedies such as refund or compensation under the Consumer Protection Act or Contract Act. No criminal offense under IPC 420 or 406 is made out."
 }
-
+```
 Final Verdict: Not Guilty  
 Verdict Changed: Yes
 
