@@ -37,6 +37,23 @@ Reason: Absence of mens rea at the inception of the agreement and the availabili
 
 ---
 
+## ▶️ How to Use the LegalLens API
+
+You can interact with the LegalLens-API directly via a POST request to the hosted endpoint.
+
+### 🔗 API Endpoint
+
+```plaintext
+POST https://negi2725-LegalLens-API.hf.space/api/v1/analyze-case
+
+{
+  "caseText": "Your full case summary goes here as a single string."
+}
+```
+
+
+---
+
 ## 🔗 **Pipeline Overview**
 
 1. **LegalBERT Prediction**
