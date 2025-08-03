@@ -1,210 +1,171 @@
-# Legal RAG Analysis API
+# ⚖️ LegalLens-API: Judge-as-a-Service using Gemini 2.5 + LegalBERT
 
-A FastAPI backend for legal case analysis using Retrieval-Augmented Generation (RAG) system with LegalBERT predictions and Gemini AI evaluation.
+> 🔍 Verdict Prediction + Dual RAG + Verdict Justification for Indian Supreme Court Cases
 
-## Overview
+---
 
-This API provides comprehensive legal case analysis by combining:
-- LegalBERT model for initial verdict predictions
-- RAG system with FAISS indexes for retrieving relevant legal documents
-- Gemini AI for final evaluation and detailed explanations
+## 🚀 Overview
 
-## Features
+LegalLens-API is a **hybrid legal reasoning engine** that simulates how a judge reads, retrieves, and rules. It uses a **fine-tuned LegalBERT** classifier to predict verdicts, and **Gemini 2.5 Flash** to either **defend or override** them using a **two-level FAISS-based retrieval system**.
 
-- **Case Analysis**: Analyze legal cases and predict verdicts
-- **RAG Integration**: Retrieve relevant legal documents from multiple sources
-- **AI Evaluation**: Get detailed legal explanations from Gemini AI
-- **Health Monitoring**: Check system status across all components
-- **Model Status**: Monitor loading status of ML models and indexes
+---
 
-## API Endpoints
+## 📊 Data Used
 
-### Core Endpoints
+| Dataset              | Description |
+|----------------------|-------------|
+| **Fine-tuning Data** | 12,000 manually labeled Supreme Court judgments (ILDC format) for `guilty` / `not guilty` classification |
+| **RAG Retrieval Base** | ~5,000 chunks across 6 domains: Constitution, IPC sections, IPC case laws, Statutes, QA-style texts, and General Case Law |
+| **Embedding Model** | [BAAI/bge-large-en-v1.5](https://huggingface.co/BAAI/bge-large-en-v1.5) for chunk embedding |
+| **Indexing Strategy** | FAISS with cosine similarity, L2-normalized dense vectors (not HNSW due to small size) |
 
-#### `POST /api/v1/analyze-case`
-Analyze a legal case and provide verdict prediction with detailed explanation.
+---
 
-**Request Body:**
-```json
+## 🧬 How It Works (Pipeline)
+
+### 1. 🧠 Verdict Prediction via LegalBERT
+
+- Model: Fine-tuned LegalBERT (epoch=4)
+- Output: `"guilty"` or `"not guilty"` + confidence score (softmax)
+
+```python
+verdict = predictVerdict(caseText)
+confidence = getConfidence(caseText)
+2. 🔍 Search Query Generation using Gemini 2.5
+Input: Case text
+
+Output: Legal search query (e.g., IPC 420, breach of trust, absence of intent)
+
+3. 🧭 Dual-Stage Retrieval (Parallel RAG)
+Both run in parallel over same FAISS-indexed corpus:
+
+✅ RAG #1 (Gemini Query)
+Retrieves top 5 chunks per domain using Gemini’s legal keywords.
+
+✅ RAG #2 (Original Case Text)
+Retrieves top 5 chunks per domain using raw case text.
+
+🔄 Merge Strategy
+Combined → deduplicated → top 10 support chunks per domain selected.
+
+4. ⚖️ Verdict Evaluation by Gemini 2.5
+Condition	Gemini Behavior
+Confidence ≥ 60%	Justify LegalBERT’s verdict using legal chunks
+Confidence < 60%	Re-evaluate case using laws + precedent
+
+Gemini Prompt Includes:
+
+Case text
+
+Model’s prediction + confidence
+
+Top 10 retrieved chunks
+
+Gemini’s search query (if available)
+
+Gemini Responds With:
+
+Legal analysis like a judge
+
+Final verdict
+
+Verdict change status
+
+5. 📤 Final Output (Sample)
+json
+Copy
+Edit
 {
-  "caseText": "The accused was found in possession of stolen property...",
-  "useQueryGeneration": true
+  "verdict": "not guilty",
+  "confidence": 0.71,
+  "geminiVerdict": "not guilty",
+  "verdictChanged": "No",
+  "reasoning": "Given the absence of mens rea and legal precedent ABC vs State..."
 }
-```
+🧠 Gemini Prompting Strategy
+Role: Act like a judge
 
-**Response:**
-```json
-{
-  "initialVerdict": "guilty",
-  "initialConfidence": 0.85,
-  "finalVerdict": "guilty", 
-  "verdictChanged": false,
-  "searchQuery": "stolen property, IPC section 411, criminal breach of trust",
-  "geminiExplanation": "Based on the legal analysis...",
-  "supportingSources": {...},
-  "analysisLogs": {...}
-}
-```
+Consider: IPC, Constitution, precedent, statutes
 
-#### `GET /api/v1/health`
-Check the health status of all system components.
+Include final lines:
 
-**Response:**
-```json
-{
-  "status": "healthy",
-  "services": {
-    "legal_bert": true,
-    "rag": true,
-    "gemini": true
-  },
-  "error": null
-}
-```
-
-#### `GET /api/v1/models/status`
-Get detailed status of all models and indexes.
-
-**Response:**
-```json
-{
-  "legalBert": {
-    "loaded": false,
-    "device": "cpu"
-  },
-  "ragIndexes": {
-    "loaded": false,
-    "indexCount": 0
-  },
-  "gemini": {
-    "configured": true
-  }
-}
-```
-
-## Setup Instructions
-
-### Prerequisites
-
-1. **Gemini API Key**: Required for AI analysis
-   - Get from [Google AI Studio](https://aistudio.google.com/)
-   - Add as `GEMINI_API_KEY` environment variable
-
-2. **Model Files** (Optional for development):
-   - LegalBERT model files in `./models/legalbert_model/`
-   - FAISS indexes in `./faiss_indexes/`
-
-### Installation
-
-1. **Install Dependencies:**
-   ```bash
-   pip install fastapi uvicorn pydantic pydantic-settings google-genai
-   ```
-
-2. **For Full Functionality (ML Models):**
-   ```bash
-   pip install torch transformers sentence-transformers faiss-cpu numpy
-   ```
-
-3. **Run the Server:**
-   ```bash
-   python -m uvicorn main:app --host 0.0.0.0 --port 5000 --reload
-   ```
-
-## Project Structure
-
-```
-├── main.py                 # FastAPI application entry point
+yaml
+Copy
+Edit
+Final Verdict: Guilty or Not Guilty  
+Verdict Changed: Yes or No
+🗂️ File/Code Structure
+bash
+Copy
+Edit
+LegalLens-API/
 ├── app/
-│   ├── api/
-│   │   └── routes.py       # API route definitions
-│   ├── core/
-│   │   └── config.py       # Configuration settings
-│   ├── models/
-│   │   └── schemas.py      # Pydantic models
-│   └── services/
-│       ├── legal_bert.py   # LegalBERT service
-│       ├── rag_service.py  # RAG retrieval service
-│       └── gemini_service.py # Gemini AI service
-├── models/                 # LegalBERT model files (to be added)
-└── faiss_indexes/          # FAISS indexes (to be added)
-```
+│   ├── services/               # RAG + Gemini handlers
+│   ├── models/                 # LegalBERT loading
+│   ├── api/                    # FastAPI routes
+├── faiss_indexes/              # Chunk indexes (.faiss, .json, .pkl)
+├── main.py                     # Entrypoint
+├── raggy.ipynb                 # Full Colab notebook
+└── README.md                   # This file
+🧪 How to Run
+🔌 Install Dependencies
+bash
+Copy
+Edit
+pip install -r requirements.txt
+⚡ Use LegalBERT
+python
+Copy
+Edit
+verdict = predictVerdict(caseText)
+confidence = getConfidence(caseText)
+🔎 Run Dual RAG + Gemini
+python
+Copy
+Edit
+logs = evaluateCaseWithGemini(
+  inputText=caseText,
+  modelVerdict=verdict,
+  confidence=confidence,
+  retrieveFn=retrieveSupportChunksParallel,
+  geminiQueryModel=model
+)
+📊 Evaluation Modes
+Metric	Description
+Verdict Accuracy	Based on Gemini's final verdict
+Verdict Stability	Whether Gemini changes prediction
+Explanation Depth	Manual judgment of legal reasoning richness
 
-## Development Mode
+📌 Notable Insights
+Gemini is highly accurate at generating legal search queries
 
-The API works in development mode without ML dependencies:
-- Uses placeholder predictions for LegalBERT
-- Provides mock RAG retrieval
-- Full Gemini AI integration for analysis
+Dual RAG improves factual/legal correctness over single retrieval
 
-## Adding Model Files
+Confidence gating helps Gemini behave conservatively when uncertain
 
-To enable full functionality:
+🌐 Future Roadmap
+Add NyayaAnumana dataset for local court decisions
 
-1. **LegalBERT Model:**
-   - Place model files in `./models/legalbert_model/`
-   - Install torch and transformers
+Enable Gemini's long-context mode for detailed case files
 
-2. **FAISS Indexes:**
-   - Add indexes to `./faiss_indexes/`
-   - Install faiss-cpu and sentence-transformers
+Retrieval from scanned PDFs using OCR
 
-## Configuration
+Explainable AI layer for why a chunk was retrieved
 
-Key settings in `app/core/config.py`:
-- Model paths
-- FAISS index locations  
-- API configuration
-- RAG parameters
+🧾 Example Output (YAML)
+yaml
+Copy
+Edit
+Final Verdict: Not Guilty  
+Verdict Changed: No
 
-## Environment Variables
+Reason: The retrieved IPC sections and prior judgments do not establish criminal intent conclusively.
+diff
+Copy
+Edit
 
-- `GEMINI_API_KEY`: Required for Gemini AI integration
-- `LEGAL_BERT_MODEL_PATH`: Path to LegalBERT model
-- `FAISS_INDEXES_PATH`: Base path for FAISS indexes
-
-## Usage Examples
-
-### Basic Case Analysis
-```python
-import requests
-
-response = requests.post('http://localhost:5000/api/v1/analyze-case', json={
-    'caseText': 'The accused was caught stealing from a shop.',
-    'useQueryGeneration': True
-})
-
-result = response.json()
-print(f"Verdict: {result['finalVerdict']}")
-print(f"Explanation: {result['geminiExplanation']}")
-```
-
-### Health Check
-```python
-import requests
-
-health = requests.get('http://localhost:5000/api/v1/health')
-print(health.json())
-```
-
-## API Documentation
-
-Once running, visit:
-- **Interactive API Docs**: http://localhost:5000/docs
-- **OpenAPI Schema**: http://localhost:5000/openapi.json
-
-## Legal Document Sources
-
-The RAG system retrieves from:
-- Indian Constitution articles
-- IPC sections
-- Case law precedents  
-- Legal statutes
-- Q&A legal content
-
-## Notes
-
-- The system is designed for Indian criminal law cases
-- Placeholder implementations allow development without full ML setup
-- All services include health monitoring for production deployment
-- CORS is configured for frontend integration
+Let me know if you'd like:
+- a condensed version,
+- Hindi/localized version,
+- LaTeX version for academic use,
+- or a version styled for Hugging Face Spaces or GitHub Pages.
