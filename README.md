@@ -2,17 +2,17 @@
 
 A robust backend API leveraging Dual-Stage Retrieval-Augmented Generation (RAG) and advanced Gemini 2.5 prompting for Indian legal case analysis. Combines LegalBERT predictions with relevant law/precedent retrieval and judge-style generative reasoning.
 
-###Example
+### 🔗 Hosted API
+Access the running instance of LegalLens-API here:  
+👉 [LegalLens-API on Hugging Face Spaces](https://huggingface.co/spaces/negi2725/LegalLens-API)
 
 ## 🧾 Example Input & Output
 
 ### ✅ Input (Case Summary)
 
-
 The Petitioner, a small business owner, entered into a contract with the Respondent—a freelance developer—for the creation of an e-commerce website. The contract, signed on March 5, 2023, stipulated delivery by April 15, 2023, against an advance payment of ₹1,00,000. The Respondent repeatedly delayed delivery, eventually submitting an incomplete, non-functional version on May 10, 2023.
 
 The Petitioner claims losses due to missed business opportunities and reputational harm, alleging criminal wrongdoing under IPC Sections 420 (cheating) and 406 (criminal breach of trust). Legal action is sought for refund, damages, and criminal conviction.
-
 
 Query by tags for 1st retrival : IPC 420, IPC 406, cheating, criminal breach of trust, dishonest intention, fraud
 
