@@ -3,25 +3,19 @@ from typing import Optional
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    # Hugging Face Token
-    hf_token: Optional[str] = None  # <-- Add this line to fix the error
+    hf_token: Optional[str] = None 
 
-    # API Configuration
     api_title: str = "Legal RAG Analysis API"
     api_version: str = "1.0.0"
     debug: bool = False
-
-    # Gemini AI Configuration
+    
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
     gemini_model: str = "gemini-2.5-flash"
 
-    # Model Paths
     legal_bert_model_path: str = os.getenv("LEGAL_BERT_MODEL_PATH", "./models/legalbert_model")
 
-    # FAISS Index Paths
     faiss_indexes_base_path: str = os.getenv("FAISS_INDEXES_PATH", "./faiss_indexes")
 
-    # Index file paths
     constitution_index_path: str = f"{faiss_indexes_base_path}/constitution_bgeLarge.index"
     constitution_chunks_path: str = f"{faiss_indexes_base_path}/constitution_chunks.json"
 
@@ -40,10 +34,8 @@ class Settings(BaseSettings):
     case_law_index_path: str = f"{faiss_indexes_base_path}/case_faiss.index"
     case_law_chunks_path: str = f"{faiss_indexes_base_path}/case_chunks.pkl"
 
-    # Sentence Transformer Model
     sentence_transformer_model: str = "BAAI/bge-large-en-v1.5"
 
-    # RAG Configuration
     top_k_results: int = 5
     max_unique_chunks: int = 10
     confidence_threshold: float = 0.6
