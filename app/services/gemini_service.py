@@ -1,7 +1,7 @@
 import re
 import logging
 from typing import Dict, List, Any, Optional
-import google.generativeai as genai  # ✅ Correct import
+import google.generativeai as genai 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -14,8 +14,8 @@ class GeminiService:
     def _initialize_client(self):
         try:
             if settings.gemini_api_key:
-                genai.configure(api_key=settings.gemini_api_key)  # ✅ Setup
-                self.client = genai.GenerativeModel(model_name=settings.gemini_model)  # ✅ Instantiate model
+                genai.configure(api_key=settings.gemini_api_key) 
+                self.client = genai.GenerativeModel(model_name=settings.gemini_model) 
                 logger.info("Gemini client initialized successfully")
             else:
                 logger.warning("Gemini API key not provided")
@@ -49,7 +49,7 @@ Case Facts:
 Return only the search query, no explanation or prefix:
 """
         try:
-            response = self.client.generate_content(prompt)  # ✅ Updated API
+            response = self.client.generate_content(prompt) 
             query = response.text.strip().replace("Search Query:", "").strip('"').replace("\n", "") if response.text else caseFacts[:50]
             
             if verbose:
@@ -150,7 +150,7 @@ Respond in the tone of a formal Indian judge. Your explanation should reflect re
                 searchQuery = inputText
 
             prompt = self.buildGeminiPrompt(inputText, modelVerdict, confidence, support, searchQuery)
-            response = self.client.generate_content(prompt)  # ✅ Updated API
+            response = self.client.generate_content(prompt) 
             geminiOutput = response.text if response.text else "No response from Gemini"
 
             finalVerdict, verdictChanged = self.extractFinalVerdict(geminiOutput)
