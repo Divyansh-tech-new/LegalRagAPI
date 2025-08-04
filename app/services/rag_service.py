@@ -65,7 +65,6 @@ class RAGService:
             "caseLaw": self.loadFaissIndexAndChunks(f"{basePath}/case_faiss.index", f"{basePath}/case_chunks.pkl")
         }
         
-        # Remove failed loads
         self.preloadedIndexes = {k: v for k, v in self.preloadedIndexes.items() if v[0] is not None}
         logger.info(f"Successfully loaded {len(self.preloadedIndexes)} indexes")
     
