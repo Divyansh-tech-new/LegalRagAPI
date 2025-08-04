@@ -10,10 +10,7 @@ from huggingface_hub import snapshot_download
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Hugging Face model & dataset download
 logger.info("Downloading model and dataset from Hugging Face Hub...")
-
-# HF_TOKEN = os.getenv("HF_TOKEN")  # Set in environment variables # make sure this imports the class that loads .env
 
 HF_TOKEN = settings.hf_token
 print(f"Loaded HF_TOKEN: {HF_TOKEN!r}")
@@ -32,7 +29,6 @@ MODEL_PATH = snapshot_download(
 logger.info(f"FAISS index files downloaded to: {FAISS_INDEX_PATH}")
 logger.info(f"Model files downloaded to: {MODEL_PATH}")
 
-# Make these paths accessible globally in your app if needed
 os.environ["FAISS_INDEX_PATH"] = FAISS_INDEX_PATH
 os.environ["MODEL_PATH"] = MODEL_PATH
 
