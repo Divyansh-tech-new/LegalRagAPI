@@ -42,14 +42,13 @@ class LegalBertService:
     
     def _load_model(self):
         try:
-            # Check for zip file first
+
             zipPath = os.path.join("./models", "legalbert_epoch4.zip")
             
             if os.path.exists(zipPath):
                 if self._extract_model_from_zip(zipPath, settings.legal_bert_model_path):
                     logger.info("Model zip file found and extracted")
             
-            # Try to load the actual model
             if os.path.exists(settings.legal_bert_model_path) and os.path.exists(os.path.join(settings.legal_bert_model_path, "config.json")):
                 try:
                     import torch
